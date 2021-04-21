@@ -1,22 +1,47 @@
-dist: trusty
-sudo: required
+dist: bionic
 language: go
-
-env:
-  global:
-    # Secure variables are not exposed for external pull requests: https://docs.travis-ci.com/user/pull-requests#Pull-Requests-and-Security-Restrictions
-    # AWS_ACCESS_KEY_ID
-    - secure: "yiT2b6FWyG2pUi8v2dHmCHG/6hgYqxnq+VGlR5OTvaaStj5oJOMAI4Jj4fVfEXVQOxuy9fWn+f1Q2ARlKkpZLO6rm6pfseXIAhkijcQ1dl8UjM5OV7s19egKeixKODD1WphBrKomOujyn6nuj71b8x1oIiZ5NOhgq9w51jdMAOI/aijz8BSBfmooARr2urNMlus8v59Y3t259ACTp+hAco8mR96BbFq7a33nQ0qgYLdro1FTdwel9EWvspMNhTSmi8I54zt0QVAeSqJ+DuqeYEudq01ZN+ya9HG/H2JvEnWPh1XO642tNh0Asg7dmtxsPp9XEHkEf8N/GUT6boQyagHsTmlo1TS9RjHMOtBK5Oa/HQ3lQ2Dqxpg1vnbBtYS2fgg6b/YEySv1ERV3kVvBc1N77YgnSdTrtMLopp3HbcA2xoRv0wv7IGn1uM8KBYDwBVOySjtXcAcCvNRVW+gnuVrqTA9z7GUREn1Rn8G38YcnYBDC7QkZTBM+Fh9ttAiD9J+DfdEg8tZ+0fhCfEBkAVkvAqtY+K/aNHBkcK0bE5KhLdcjORyQ4Q/vg9mEyqSyeN03mF5tCSIaljGWU/M/NWODzMC+0kSX2oLCWNiMLwNJqSzNS3OYTlnKLOUhtfNew7Qku10GtAI8zSOgjPPsqGTk3ZrRcRpqwXc7PGSJIKM="
-    # AWS_SECRET_ACCESS_KEY
-    - secure: "YsGaMb91LxFFrZa1+bfRQCM0LhKY1FDQKaBOegfMqhoOAe5skms9apYkum8/8GjEAn1I+zVfKQ69oTzRSxIIdt+in5I/wFpDp35PW3O56zS2E5jWBb6yIm3mv1aHBOYw3UB1prj/TDwsNs+UKNPMVGYob8lx5wri5NFVU7XTqUBSB1fRuxKYkadixlzBiN9aHO8Bz4pfPS0YE+9VZbmMgjGCOxnRWroBAQLhGxbJmhjreYmQ4xmpHYgAotAo9QjPiOHE1PiJyIPGOf6rQlWYYzW9dRfwqGmApoZKzF+xaG9IpGj+/zmrMUYov3ROsp0+X4vVeGXfbPqUdToVfE1m5ET+DfC59+V0tAyrfJoZjtQTplxKI4UN9TPtBKXqjhISiavViYlDyncAg4zBe6Mza8uTOog5phZhBVwq431IfKAIrJbKa58kblv4j7uzj/pwYPO9Vxhuzn6xM95I/7GAlPTUs1ARUMxkIDKXb2z/vQ5mmptJRHeC7d7vBqiuvc0juJ8BrGzmAVtNL3lDSH7HtrZuM0nxt+Vp9sL7cc4Biywi66HY8DV/MBzPCb3TC+qqMQ72NC5ZZC8zbb7O3P1x4e/uIs3qGDsS8Wq2QxlEMDV16f5p1tMnUJNloD6XQnu0IMWHs4lYX3vUcco9uBxc7uUuyxcCr0LMt6fUSuvR3eE="
-
-go:
-  - 1.10.x
-  - 1.11.x
-  - tip
 
 services:
   - docker
+
+go:
+  - 1.13.x
+  - master
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - go: master
+
+# skip non-trunk PMM-XXXX branch builds, but still build pull requests
+branches:
+  except:
+    - /^PMM\-\d{4}/
+
+cache:
+  directories:
+    - /home/travis/.cache/go-build
+    # - /home/travis/gopath/pkg
+
+before_cache:
+  - go clean -testcache
+  # - go clean -cache
+
+go_import_path: github.com/percona/rds_exporter
+
+env:
+  global:
+    # AWS - PMM Autotest account.
+    # Travis secrets are not exposed to pull requests from forks: https://docs.travis-ci.com/user/pull-requests#pull-requests-and-security-restrictions
+    - AWS_ACCESS_KEY=AKIAZPBRO3QWGCO72MJZ
+    - secure: "X8jXCbsnCkyEsZN11AQ5NgF5Wl84ZTWxr8LuWXgVZ/3QwRvY7rK25FZVwf8TQqF3wch92WFnSwF9jQ37cz0H6SOa+tQ0NHDhUGIqEfdIlIfb8lGvEEPsD3OPenqRZWDRFFoywgkqu+PZU2uuFW5gC93RbClgBGv4oy+NrJF+Etkikv6E+mMZQc0O/UtEZUyXvRnfKY0/zPAHPsSNtEBvk3Q2lAIsl31pfMn6m1rBxPmuHShsigo+smMZTGXkijIa/aXUNOxz5lXppjvMmbNAg4/3+46MHTDXLmX7irGaUMvKKi4Ya6Hvu9+6UGjInrothVN98Y2k2J+ERZooM7ND7kv3vn3RilYbBhnpsdmmpL0nEQYTsJBvaaWKRZMIxS0Xd21CKOSGN+8Omq9iBgiW1L87xKxYD78OF+2Z9VwzHHk+Oaq2ky3LT/z3WGtnMWpURSxvjw76neFIxoIMHFVIZh0kywrmObZy3mgF0zzC/jRU2PK/ie9k0LJhxuHoEeb4b55f1PmUfhCJ7KblE3x13SlUUQqnvIL7qscKL1nEtFl/kidHtBYJAZzi0ctb2mHduzi89VYKqu6w3S93HpQQLkqpg9+i+i890mQrpytFGrcGVj4SikIE1fwlv/V8MS9zZukvizSV9l/Z0hV5YDqqHPX0UICrf7w/u9vkZSsz45g="
+    # REVIEWDOG_GITHUB_API_TOKEN
+    - secure: "2BgdTQdJFrXJANqhgOHOTZBL4F8kh1WxoYlG0pMKam7VWooaSiehc18abODUmRkdVoDPen1MpikmAH8ekabkTfkAJ+qxqEUp1pkA20bs18tePUyHS2iGn5hgN9SMrxOb5QB0vHilg0B95BNlIy2kZY6A2+JWn73aqDsFDMV8OMEeA4Mi0KnYtbXmmZ9gqTw+gusfxkVD8RNgXvg4zGmNLS/hLaXFFtmtx9xl7SAbQPvxtj9Po7FUYq9G+qazjg0pRZ9UH6hJQPxIHOumRx447hagL/521X9ZAtlwe17H368M4a7J2Cd6Tm70alktDH3Tsu258PMsKsTqQOHtMOfeOiDshqN2K0AuKatYBsSAshxgDChDe7+Wyi9VV1mlo1zUTEe4bVaBlHZy0VCy5JuzwrxFS2Xz/dXvNIaqlTfzimrPgOavXREDycoKHpcJf6IKvwWX9+JVopTqR7Md3gQIOpRrLJ2wOtAv8KdG6g2wuBe2IMdbXpUOPvBS+SjERuXAp99H4H2irt74HAfTudtvC6MtE/t5BYV4hmuEfX5zKGiZ6xShBasQeRWqsSwi4gWU8k5CpwqbkMt4NMNBWGZuAi01w8fM0QHidqlBOO4drps0N1gbNXUIgR/0S1w8rYzfL4Z2K7bX7L9qYyP09dSeha3MUFiu0w4WCNqPoafYiQo="
+
+install:
+  # install reviewdog and golangci-lint
+  - curl https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh| sh -s
+  - curl https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s latest
 
 script:
   - make travis

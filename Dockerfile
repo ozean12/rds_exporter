@@ -1,4 +1,4 @@
-FROM golang:1.12-alpine3.9 AS build
+FROM golang:1.15-alpine3.13 AS build
 
 RUN apk add --no-cache git build-base
 RUN go get -u github.com/golang/dep/cmd/dep
@@ -15,7 +15,7 @@ COPY . /go/src/github.com/percona/rds_exporter
 RUN make build
 
 
-FROM alpine:3.9
+FROM alpine:3.13
 
 RUN apk update && \
     apk add ca-certificates && \
