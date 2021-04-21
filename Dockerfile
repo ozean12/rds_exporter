@@ -1,24 +1,18 @@
-FROM golang:1.15-alpine3.13 AS build
+FROM golang:1.16-alpine3.13 AS build
 
 RUN apk add --no-cache git build-base
-RUN go get -u github.com/golang/dep/cmd/dep
-
-WORKDIR /go/src/github.com/percona/rds_exporter
-
-# Use docker cache when dependancies unchanged
-COPY Gopkg.toml Gopkg.lock ./
-RUN dep ensure -vendor-only
 
 # Build the application
+WORKDIR /go/src/github.com/percona/rds_exporter
 COPY . ./
-COPY . /go/src/github.com/percona/rds_exporter
-RUN make build
+ENV GO111MODULE=on
+RUN go mod init github.com/percona/rds_exporter && go mod tidy && go mod vendor
+RUN make build || (go mod vendor && make build)
 
 
 FROM alpine:3.13
 
-RUN apk update && \
-    apk add ca-certificates && \
+RUN apk add --no-cache ca-certificates && \
     update-ca-certificates
 
 COPY --from=build /go/src/github.com/percona/rds_exporter/rds_exporter /bin/
