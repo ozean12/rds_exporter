@@ -1,1 +1,1 @@
-deliveryPipeline(lang: 'go')
+deliveryPipelineV2()

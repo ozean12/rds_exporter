@@ -73,4 +73,14 @@ codecov: gocoverutil
 gocoverutil:
 	@$(GO) get -u github.com/AlekSi/gocoverutil
 
-.PHONY: all style format build test vet tarball docker promu
+dist:
+	@echo ">> copy source to GOPATH"
+	@if [ -d $(GOPATH)/src/github.com/percona/rds_exporter ]; then rm -rf $(GOPATH)/src/github.com/percona/rds_exporter; fi
+	@if [ ! -d $(GOPATH)/src/github.com/percona ]; then mkdir -p $(GOPATH)/src/github.com/percona; fi
+	@cp -r $(PREFIX) $(GOPATH)/src/github.com/percona/rds_exporter
+	@echo ">> kind of a perverted way to build, but it works..."
+	@GO111MODULE=on cd $(GOPATH)/src/github.com/percona/rds_exporter && go mod init github.com/percona/rds_exporter && go mod tidy && go mod vendor && (make build || (go mod vendor && make build))
+	@echo ">> copy binary back to working dir"
+	@cp $(GOPATH)/src/github.com/percona/rds_exporter/rds_exporter $(PREFIX)
+
+.PHONY: all style format build test vet tarball docker promu dist
