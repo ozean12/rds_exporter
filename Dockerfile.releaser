@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-COPY ./rds_exporter/rds_exporter  /bin/
+COPY ./rds_exporter  /bin/
 
 RUN apk update && \
   apk add ca-certificates --no-cache && \
