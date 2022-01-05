@@ -36,8 +36,6 @@ jobs:
         echo "$HOME/gotip/bin" >> $GITHUB_PATH
     - name: Checkout code
       uses: percona-platform/checkout@v2
-    - name: Build
-      run: make build
     - name: Run checks
       run: |
         go build -modfile=tools/go.mod -o bin/golangci-lint github.com/golangci/golangci-lint/cmd/golangci-lint
@@ -54,10 +52,6 @@ jobs:
         AWS_ACCESS_KEY: AKIAZPBRO3QWCEHJTL35
         AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
       run: make codecov
-    - name: Build tarball
-      run: make tarball
-    - name: Build tarball
-      run: make docker
     - name: Run debug commands on failure
       if: ${{ failure() }}
       run: |
