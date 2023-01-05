@@ -83,3 +83,5 @@ Exporter synthesizes [node_exporter](https://github.com/prometheus/node_exporter
 
 You can see a list of basic monitoring metrics [there](https://github.com/percona/rds_exporter/blob/master/basic/testdata/all.txt)
 and a list of enhanced monitoring metrics in text files [there](https://github.com/percona/rds_exporter/tree/master/enhanced/testdata).
+
+TEST
