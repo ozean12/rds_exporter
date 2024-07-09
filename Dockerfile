@@ -1,4 +1,4 @@
-FROM golang:1.19-alpine3.13 AS builder
+FROM golang:1.19-alpine3.19 AS builder
 
 COPY . /usr/src/rds_exporter
 
@@ -9,7 +9,7 @@ FROM        alpine:latest
 COPY --from=builder /usr/src/rds_exporter/rds_exporter  /bin/
 # COPY config.yml           /etc/rds_exporter/config.yml
 
-FROM alpine:3.13
+FROM alpine:3.19
 
 RUN apk add --no-cache ca-certificates && \
     update-ca-certificates
