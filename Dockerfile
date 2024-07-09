@@ -1,4 +1,4 @@
-FROM golang:1.19 as builder
+FROM golang:1.19-alpine3.13 AS builder
 
 COPY . /usr/src/rds_exporter
 
