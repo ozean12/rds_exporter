@@ -1,4 +1,4 @@
-FROM golang:1.16 as builder
+FROM golang:1.19 as builder
 
 COPY . /usr/src/rds_exporter
 
