@@ -1,5 +1,7 @@
 FROM golang:1.19-alpine3.18 AS builder
 
+RUN apk add --no-cache git build-base
+
 COPY . /usr/src/rds_exporter
 
 RUN cd /usr/src/rds_exporter
