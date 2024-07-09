@@ -2,11 +2,13 @@ package enhanced
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/log"
 
 	"github.com/percona/rds_exporter/sessions"
 )
@@ -22,23 +24,24 @@ type Collector struct {
 
 // Maximal and minimal metrics update interval.
 const (
-	maxInterval = 10 * time.Second
+	maxInterval = 60 * time.Second
 	minInterval = 2 * time.Second
 )
 
 // NewCollector creates new collector and starts scrapers.
-func NewCollector(sessions *sessions.Sessions) *Collector {
+func NewCollector(sessions *sessions.Sessions, logger log.Logger) *Collector {
 	c := &Collector{
 		sessions: sessions,
-		logger:   log.With("component", "enhanced"),
+		logger:   log.With(logger, "component", "enhanced"),
 		metrics:  make(map[string][]prometheus.Metric),
 	}
 
 	for session, instances := range sessions.AllSessions() {
-		s := newScraper(session, instances)
+		enabledInstances := getEnabledInstances(instances)
+		s := newScraper(session, enabledInstances, logger)
 
 		interval := maxInterval
-		for _, instance := range instances {
+		for _, instance := range enabledInstances {
 			if instance.EnhancedMonitoringInterval > 0 && instance.EnhancedMonitoringInterval < interval {
 				interval = instance.EnhancedMonitoringInterval
 			}
@@ -46,7 +49,7 @@ func NewCollector(sessions *sessions.Sessions) *Collector {
 		if interval < minInterval {
 			interval = minInterval
 		}
-		s.logger.Infof("Updating enhanced metrics every %s.", interval)
+		level.Info(s.logger).Log("msg", fmt.Sprintf("Updating enhanced metrics every %s.", interval))
 
 		// perform first scrapes synchronously so returned collector has all metric descriptions
 		m, _ := s.scrape(context.TODO())
@@ -62,6 +65,18 @@ func NewCollector(sessions *sessions.Sessions) *Collector {
 	}
 
 	return c
+}
+
+func getEnabledInstances(instances []sessions.Instance) []sessions.Instance {
+	enabledInstances := make([]sessions.Instance, 0, len(instances))
+	for _, instance := range instances {
+		if instance.DisableEnhancedMetrics {
+			continue
+		}
+		enabledInstances = append(enabledInstances, instance)
+	}
+
+	return enabledInstances
 }
 
 // setMetrics saves latest scraped metrics.

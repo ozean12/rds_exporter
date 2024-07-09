@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/prometheus/common/promlog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -30,8 +31,9 @@ func TestSession(t *testing.T) {
 		require.Fail(t, "AWS_ACCESS_KEY and AWS_SECRET_KEY environment variables must be set for this test")
 	}
 
-	client := client.New()
-	sessions, err := New(cfg.Instances, client.HTTP(), false)
+	logger := promlog.New(&promlog.Config{})
+	client := client.New(logger)
+	sessions, err := New(cfg.Instances, client.HTTP(), logger, false)
 	require.NoError(t, err)
 
 	am56s, am56i := sessions.GetSession("us-east-1", "autotest-aurora-mysql-56")
@@ -62,7 +64,7 @@ func TestSession(t *testing.T) {
 	p10iExpected := Instance{
 		Region:                     "us-east-1",
 		Instance:                   "autotest-psql-10",
-		ResourceID:                 "db-OZNCI2RJ7VU3IE3XE52ZCLVBMA",
+		ResourceID:                 "db-PUZFCRUUHY365QFJLTOUWRDOCQ",
 		EnhancedMonitoringInterval: time.Minute,
 	}
 	m57iExpected := Instance{
@@ -74,7 +76,7 @@ func TestSession(t *testing.T) {
 	ap11iExpected := Instance{
 		Region:                     "us-west-2",
 		Instance:                   "autotest-aurora-psql-11",
-		ResourceID:                 "db-MZ2RNFOFFZTGHAE2QR46PD2CH4",
+		ResourceID:                 "db-TYM5GWPPEMFCR5L6YX6ZBHUIUE",
 		EnhancedMonitoringInterval: time.Minute,
 	}
 

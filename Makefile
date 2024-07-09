@@ -11,8 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-GO    := GO15VENDOREXPERIMENT=1 go
-PROMU := $(GOPATH)/bin/promu
+GO    := go
 pkgs   = $(shell $(GO) list ./...)
 
 PREFIX                  ?= $(shell pwd)
@@ -20,8 +19,11 @@ BIN_DIR                 ?= $(shell pwd)
 DOCKER_IMAGE_NAME       ?= $(shell basename $(shell pwd))
 DOCKER_IMAGE_TAG        ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD))
 
-
 all: format build test
+
+GO_BUILD_LDFLAGS = -X github.com/prometheus/common/version.Version=$(shell cat VERSION) -X github.com/prometheus/common/version.Revision=$(shell git rev-parse HEAD) -X github.com/prometheus/common/version.Branch=$(shell git describe --always --contains --all) -X github.com/prometheus/common/version.BuildUser= -X github.com/prometheus/common/version.BuildDate=$(shell date +%FT%T%z) -s -w
+
+export PMM_RELEASE_PATH?=.
 
 style:
 	@echo ">> checking code style"
@@ -43,44 +45,24 @@ vet:
 	@echo ">> vetting code"
 	@$(GO) vet $(pkgs)
 
-build: promu
-	@echo ">> building binaries"
-	@$(PROMU) build --prefix $(PREFIX)
-
-tarball: promu
-	@echo ">> building release tarball"
-	@$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
-
 docker:
 	@echo ">> building docker image $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
 	@docker build -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" .
 
-promu:
-	@GOOS=$(shell uname -s | tr A-Z a-z) \
-	        GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m))) \
-	        $(GO) get -u github.com/prometheus/promu
-
-ci-reviewdog:                   ## Runs reviewdog checks.
-	bin/golangci-lint run -c=.golangci-required.yml --out-format=line-number | bin/reviewdog -f=golangci-lint -level=error -reporter=github-pr-check
-	bin/golangci-lint run -c=.golangci.yml --out-format=line-number | bin/reviewdog -f=golangci-lint -level=error -reporter=github-pr-review
-
-travis: build ci-reviewdog test-race codecov tarball docker
+check:
+	bin/golangci-lint run -c=.golangci.yml --out-format=line-number
 
 codecov: gocoverutil
-	@gocoverutil -coverprofile=coverage.txt test $(pkgs)
+	@bin/gocoverutil -coverprofile=coverage.txt test $(pkgs)
 	@curl -s https://codecov.io/bash | bash -s - -X fix
 
 gocoverutil:
-	@$(GO) get -u github.com/AlekSi/gocoverutil
+	@$(GO) build -modfile=tools/go.mod -o bin/gocoverutil github.com/AlekSi/gocoverutil
 
 dist:
-	@echo ">> copy source to GOPATH"
-	@if [ -d $(GOPATH)/src/github.com/percona/rds_exporter ]; then rm -rf $(GOPATH)/src/github.com/percona/rds_exporter; fi
-	@if [ ! -d $(GOPATH)/src/github.com/percona ]; then mkdir -p $(GOPATH)/src/github.com/percona; fi
-	@cp -r $(PREFIX) $(GOPATH)/src/github.com/percona/rds_exporter
-	@echo ">> kind of a perverted way to build, but it works..."
-	@GO111MODULE=on cd $(GOPATH)/src/github.com/percona/rds_exporter && go mod init github.com/percona/rds_exporter && go mod tidy && go mod vendor && (make build || (go mod vendor && make build))
-	@echo ">> copy binary back to working dir"
-	@cp $(GOPATH)/src/github.com/percona/rds_exporter/rds_exporter $(PREFIX)
+	go build -ldflags="$(GO_BUILD_LDFLAGS)" -o $(PMM_RELEASE_PATH)/rds_exporter
+
+release:
+	go build -ldflags="$(GO_BUILD_LDFLAGS)" -o $(PMM_RELEASE_PATH)/rds_exporter
 
 .PHONY: all style format build test vet tarball docker promu dist

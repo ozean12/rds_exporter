@@ -1,6 +1,13 @@
-FROM golang:1.16-alpine3.13 AS builder
+FROM golang:1.19 as builder
 
-RUN apk add --no-cache git build-base
+COPY . /usr/src/rds_exporter
+
+RUN cd /usr/src/rds_exporter
+
+FROM        alpine:latest
+
+COPY --from=builder /usr/src/rds_exporter/rds_exporter  /bin/
+# COPY config.yml           /etc/rds_exporter/config.yml
 
 FROM alpine:3.13
 
